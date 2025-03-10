@@ -21,6 +21,7 @@ app.get('/endpoints', (req, res) => {
       <head>
         <title>Bodega API</title>
         <link rel="stylesheet" href="style.css">
+
       </head>
       <body>
         <h1>Vinos y Catas</h1>
@@ -42,9 +43,32 @@ app.get('/catas', (req, res) => {
 });
 
 app.get('/vinos/:id', (req, res) => {
-    const vino = db.prepare('SELECT * FROM vinos WHERE id = ?').get(req.params.id);
-    res.json(vino);
+  const vino = db.prepare('SELECT * FROM vinos WHERE id = ?').get(req.params.id);
+
+  if (!vino) {
+      return res.status(404).json({ error: 'Vino no encontrado' });
+  }
+
+  const catas = db.prepare('SELECT * FROM catas WHERE id_vino = ?').all(req.params.id);
+
+  res.json({
+      vino: {
+          nombre: vino.nombre,
+          año: vino.año,
+          tipo: vino.tipo,
+          precio: vino.precio,
+          stock: vino.stock,
+          imagen: vino.imagen
+      },
+      catas: catas.map(cata => ({
+          fecha: cata.fecha,
+          comentario: cata.comentario,
+          valoracion: cata.valoracion
+      }))
+  });
 });
+
+
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
